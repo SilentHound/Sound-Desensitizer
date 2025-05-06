@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sound Desensitizer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔊 Sound Desensitizer</h1>
+
+  <label>
+    Upload a sound file:
+    <input type="file" id="audioFile" accept="audio/*">
+  </label>
+
+  <label>
+    Minimum interval (seconds):
+    <input type="number" id="minTime" value="30">
+  </label>
+
+  <label>
+    Maximum interval (seconds):
+    <input type="number" id="maxTime" value="300">
+  </label>
+
+  <label>
+    Volume:
+    <input type="range" id="volume" min="0" max="1" step="0.01" value="1">
+  </label>
+
+  <button id="startBtn">Start</button>
+  <button id="stopBtn" disabled>Stop</button>
+
+  <p id="status"></p>
+
+  <script>
+    let timeoutId;
+    let countdownId;
+    let audio;
+    let running = false;
+
+    function playRandomly(min, max) {
+      const delaySeconds = Math.floor(Math.random() * (max - min + 1) + min);
+      let secondsLeft = delaySeconds;
+
+      document.getElementById('status').textContent = `Next sound in ${secondsLeft} seconds...`;
+
+      countdownId = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft > 0) {
+          document.getElementById('status').textContent = `Next sound in ${secondsLeft} seconds...`;
+        }
+      }, 1000);
+
+      timeoutId = setTimeout(() => {
+        clearInterval(countdownId);
+        if (audio) {
+          audio.currentTime = 0;
+          audio.volume = parseFloat(document.getElementById('volume').value);
+          audio.play();
+        }
+        if (running) playRandomly(min, max);
+      }, delaySeconds * 1000);
+    }
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      const fileInput = document.getElementById('audioFile');
+      if (!fileInput.files[0]) {
+        alert("Please upload a sound file first.");
+        return;
+      }
+
+      const min = parseInt(document.getElementById('minTime').value);
+      const max = parseInt(document.getElementById('maxTime').value);
+      if (min >= max) {
+        alert("Minimum time must be less than maximum time.");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const fileURL = URL.createObjectURL(file);
+      audio = new Audio(fileURL);
+
+      running = true;
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('stopBtn').disabled = false;
+
+      playRandomly(min, max);
+    });
+
+    document.getElementById('stopBtn').addEventListener('click', () => {
+      running = false;
+      clearTimeout(timeoutId);
+      clearInterval(countdownId);
+      document.getElementById('status').textContent = "Stopped.";
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('stopBtn').disabled = true;
+    });
+  </script>
+</body>
+</html>
